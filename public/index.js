@@ -2,109 +2,144 @@ var app = function() {
   var canvas = document.getElementById('main-canvas');
   // console.log('canvas', canvas);
   var context = canvas.getContext('2d');
-  console.log(context);
-  // context.fillStyle = 'red';
-  // context.fillRect(10, 10, 50, 50);
-  //
-  // context.beginPath();
-  // context.moveTo(100, 100);
-  // context.lineTo(100, 200);
-  //
-  // context.setLineDash([5, 15])
-  // context.stroke();
-  //
-  // context.beginPath();
-  // context.moveTo(200, 200);
-  // context.lineTo(200, 300);
-  // context.lineTo(100, 300);
-  // context.closePath();
-  // context.stroke();
-  //
-  // context.beginPath();
-  //
-  // context.arc(300, 100, 75, 0, Math.PI, true);
-  //
-  // context.stroke();
 
-  // canvas.addEventListener('click', function(event) {
-  //   console.log('location', event.layerX, event.layerY);
-  //   // These clicks are the x and y relative to the canvas. if it's event.x and event.y, it's relative to the window.
-  // })
+// Meme stuff
+  var url = 'https://api.imgflip.com/get_memes'
+
+  var makeRequest = function(url, callback) {
+    var request = new XMLHttpRequest();
+    request.open("GET", url);
+    request.addEventListener('load', callback);
+    request.send();
+  }
 
 
 
+  var requestComplete = function() {
+    if(this.status !== 200) return;
+    var jsonString = this.responseText;
+    var memeData = JSON.parse(jsonString);
+    global_memes = memeData.data.memes;
+    populateMemes(memeData);
+  }
+
+  var populateMemes = function(memeData) {
+    var memeSelect = document.getElementById("meme-selector");
+    memeData.data.memes.forEach(function(meme) {
+      var option = document.createElement('option');
+      option.innerText = meme.name;
+      memeSelect.appendChild(option);
+    });
+  }
+
+  var displayMeme = function() {
+    var pic = document.getElementById('meme-pic');
+    var jsonString = JSON.stringify(this.value);
+    var memeName = JSON.parse(jsonString);
+    var target;
+    global_memes.forEach(function(meme) {
+      if (meme.name === memeName) {
+        target = meme;
+      };
+    });
+    pic.src = target.url
+  };
+
+  var select = document.querySelector('select');
+  select.addEventListener("change", displayMeme);
+
+  makeRequest(url, requestComplete);
+
+  var getPic = document.querySelector('img');
+
+
+
+  canvas.addEventListener('dblclick', function(event) {
+    // var img = document.getElementById('meme-pic');
+    // var imgDraw = img.src
+    context.drawImage(getPic, event.layerX, event.layerY, 100, 100);
+  });
 
 
 
 
-// 'mousemove'
 
 
-  // canvas.addEventListener('mousemove', function(event) {
-  //   draw(event.layerX, event.layerY);
-  // });
-
-    // Skimmed an online tutorial, and they use an array to store values, so will try that
-
-  // var start = [];
-  // var end = [];
-  // var path = [];
-  //
-  // canvas.addEventListener('onmousedown', function(event) {
-  //   start.push({x: event.layerX, y: event.layerY})
-  // })
-  //
-  // canvas.addEventListener('onmouseup', function(event) {
-  //   end.push({x: event.layerX, y: event.layerY})
-  // })
-  //
-  // canvas.add
-  //
 
 
-  // canvas.addEventListener('ondrag' function(event) {
-  //   draw
-  // })
 
-  var radius = 3;
+
+// DRAWING FUNCTIONALITY
   var paint = false;
+  var dragArray = [];
+  var xArray = [];
+  var yArray = [];
+  var lineWidth = 5
+  var strokeStyle;
 
-  var drawCircle = function(x, y) {
-    if (paint) {
+  var addStroke = function(x, y, drag) {
+    xArray.push(x);
+    yArray.push(y);
+    dragArray.push(drag);
+  }
+
+  var draw = function() {
+    context.lineJoin = "round";
+    context.lineWidth = lineWidth;
+    context.strokeStyle = strokeStyle;
+    for (var i=0; i < xArray.length; i++) {
       context.beginPath();
-      context.arc(x, y, radius, 0, 2*Math.PI, true)
-      context.fill();
+      if (dragArray[i] && i) {
+        context.moveTo(xArray[i-1], yArray[i-1])
+      } else {
+        context.moveTo(xArray[i]-1, yArray[i-1])
+      }
+      context.lineTo(xArray[i], yArray[i]);
+      context.closePath();
+      context.stroke();
     }
   }
 
+  var reset = function() {
+    paint = false;
+    xArray = [];
+    yArray = [];
+    dragArray = [];
+  }
+
+  // DRAWING EVENTS
+
   canvas.addEventListener('mousedown', function(event) {
     paint = true;
-    canvas.addEventListener('mousemove', function(event) {
-      drawCircle(event.layerX, event.layerY);
-    });
-
   })
 
-  canvas.addEventListener('mouseup', function() {
-    paint = false;
-  })
+  canvas.addEventListener('mousemove', function(event) {
+    if (paint) {
+      addStroke(event.layerX, event.layerY, true);
+      draw();
+    }
+  });
 
-  // canvas.addEventListener('mouseup', function(event) {
-  //   drawCircle(event.layerX, event.layerY);
-  // })
+  canvas.addEventListener('mouseup', reset);
 
+  canvas.addEventListener('mouseleave', reset);
+
+
+  // OPTIONS FUNCTIONALITY
   var clearCanvas = function() {
     context.clearRect(0, 0, canvas.width, canvas.height);
   };
 
   var changeColour = function() {
-    context.fillStyle = this.value;
+    strokeStyle = this.value;
   };
 
   var changeBrush = function() {
-    radius = this.value;
+    lineWidth = this.value;
   };
 
+
+  // OPTIONS EVENTS
   var brushPicker = document.getElementById('brush-thickness');
   brushPicker.addEventListener('change', changeBrush);
 
@@ -113,6 +148,7 @@ var app = function() {
 
   var clear = document.getElementById('clear-canvas');
   clear.addEventListener('click', clearCanvas);
+
 }
 
 window.addEventListener('load', app)
