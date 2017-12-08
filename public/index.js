@@ -63,13 +63,9 @@ var app = function() {
 
 
 
-
-
-
-
-
-
 // DRAWING FUNCTIONALITY
+
+// How this works is that it populates the x and y array with the coordinates that the mouse drags over when paint is true. Paint is true when the mouse is clicked, and changes to false when the mouse leaves the canvas, or is not clicked anymore. Once the mouse leaves the canvas or is unclicked, the arrays are emptied. dragArray takes in 'true' when x and y coordinates are recorded. Add stroke function does the pushing of the coordinates/boolean.
   var paint = false;
   var dragArray = [];
   var xArray = [];
@@ -82,6 +78,8 @@ var app = function() {
     yArray.push(y);
     dragArray.push(drag);
   }
+
+// This draws lines, which sets the current index of the arrays as the moveTo, and then draws the lineTo the next index of the array.
 
   var draw = function() {
     context.lineJoin = "round";
@@ -99,6 +97,8 @@ var app = function() {
       context.stroke();
     }
   }
+
+// This one empties the arrays and sets the paint to false.
 
   var reset = function() {
     paint = false;
